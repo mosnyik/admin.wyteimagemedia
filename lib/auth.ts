@@ -1,21 +1,22 @@
-import { cookies } from "next/headers"
+// import "server-only";
+import { cookies } from "next/headers";
 
 export async function getSession() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get("admin_session")?.value
+  const cookieStore = await cookies();
+  const session = cookieStore.get("admin_session")?.value;
 
   if (!session) {
-    return null
+    return null;
   }
 
   try {
-    return JSON.parse(session)
+    return JSON.parse(session);
   } catch {
-    return null
+    return null;
   }
 }
 
 export async function isAuthenticated() {
-  const session = await getSession()
-  return !!session
+  const session = await getSession();
+  return !!session;
 }
