@@ -1,12 +1,15 @@
 // AdminPageComponent component definition
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ContestantList from "@/components/admin/contestant-list";
 import EmailModal from "@/components/admin/email-modal";
 import AdminHeader from "@/components/admin/admin-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-type contestant = {
+import { client } from "@/sanity/lib/client";
+import { formSubmissionQuery } from "@/lib/queries";
+import Loading from "@/components/shared/Loading";
+type Contestant = {
   id: number;
   surname: string;
   firstName: string;
@@ -19,67 +22,160 @@ type contestant = {
   appliedDate: string;
   photos: number;
 };
+
+// interface Contestant {
+//   _id: string;
+//   id: number;
+
+//   surname?: string;
+//   firstName?: string;
+//   otherNames?: string;
+//   dateOfBirth?: string;
+//   age?: string;
+//   phoneNumbers?: string;
+//   whatsappPhone?: string;
+//   email?: string;
+//   countryOfResidence?: string;
+//   cityOrTown?: string;
+//   postCOdeOrStreet?: string;
+//   profession?: string;
+
+//   maritalStatus?: "single" | "married" | "widowed" | "divorced";
+
+//   givenBirth?: "yes" | "no";
+//   numberOfChildren?: string;
+//   stillInSchool?: "yes" | "no";
+//   institutionName?: string;
+//   alreadyGraduated?: "yes" | "no";
+//   discipline?: string;
+//   workingClassLady?: "yes" | "no";
+//   company?: string;
+//   position?: string;
+//   businessNature?: string;
+//   image1?: number;
+//   image2?: number;
+//   // photos: number;
+//   submittedAt?: string;
+//   status: "pending" | "qualified" | "disqualified";
+//   screeningStatus?: "pending" | "screened" | "rejected";
+//   isDisqualified?: boolean;
+//   disqualificationReason?: string;
+
+//   screenedBy?: string;
+//   screenedAt?: string;
+//   votesReceived?: string;
+//   totalAmountFromVotes?: string;
+// }
+
 // Mock data - replace with actual API calls
-const mockContestants: contestant[] = [
-  {
-    id: 1,
-    surname: "Adeyemi",
-    firstName: "Chioma",
-    email: "chioma.adeyemi@email.com",
-    phone: "+234 803 456 7890",
-    country: "Nigeria",
-    profession: "Model",
-    status: "pending",
-    screeningStatus: "pending",
-    appliedDate: "2024-01-15",
-    photos: 3,
-  },
-  {
-    id: 2,
-    surname: "Okafor",
-    firstName: "Blessing",
-    email: "blessing.okafor@email.com",
-    phone: "+234 802 345 6789",
-    country: "Nigeria",
-    profession: "Nurse",
-    status: "qualified",
-    screeningStatus: "screened",
-    appliedDate: "2024-01-10",
-    photos: 2,
-  },
-  {
-    id: 3,
-    surname: "Ejiofor",
-    firstName: "Amaka",
-    email: "amaka.ejiofor@email.com",
-    phone: "+234 801 234 5678",
-    country: "UK",
-    profession: "Accountant",
-    status: "pending",
-    screeningStatus: "pending",
-    appliedDate: "2024-01-18",
-    photos: 4,
-  },
-  {
-    id: 4,
-    surname: "Ibrahim",
-    firstName: "Zainab",
-    email: "zainab.ibrahim@email.com",
-    phone: "+234 807 890 1234",
-    country: "Nigeria",
-    profession: "Fashion Designer",
-    status: "disqualified",
-    screeningStatus: "rejected",
-    appliedDate: "2024-01-12",
-    photos: 2,
-  },
-];
+// const mockContestants: contestant[] = [
+//   {
+//     id: 1,
+//     surname: "Adeyemi",
+//     firstName: "Chioma",
+//     email: "chioma.adeyemi@email.com",
+//     phone: "+234 803 456 7890",
+//     country: "Nigeria",
+//     profession: "Model",
+//     status: "pending",
+//     screeningStatus: "pending",
+//     appliedDate: "2024-01-15",
+//     photos: 3,
+//   },
+//   {
+//     id: 2,
+//     surname: "Okafor",
+//     firstName: "Blessing",
+//     email: "blessing.okafor@email.com",
+//     phone: "+234 802 345 6789",
+//     country: "Nigeria",
+//     profession: "Nurse",
+//     status: "qualified",
+//     screeningStatus: "screened",
+//     appliedDate: "2024-01-10",
+//     photos: 2,
+//   },
+//   {
+//     id: 3,
+//     surname: "Ejiofor",
+//     firstName: "Amaka",
+//     email: "amaka.ejiofor@email.com",
+//     phone: "+234 801 234 5678",
+//     country: "UK",
+//     profession: "Accountant",
+//     status: "pending",
+//     screeningStatus: "pending",
+//     appliedDate: "2024-01-18",
+//     photos: 4,
+//   },
+//   {
+//     id: 4,
+//     surname: "Ibrahim",
+//     firstName: "Zainab",
+//     email: "zainab.ibrahim@email.com",
+//     phone: "+234 807 890 1234",
+//     country: "Nigeria",
+//     profession: "Fashion Designer",
+//     status: "disqualified",
+//     screeningStatus: "rejected",
+//     appliedDate: "2024-01-12",
+//     photos: 2,
+//   },
+// ];
 
 export function AdminPageComponent({ userEmail }: { userEmail: string }) {
-  const [contestants, setContestants] = useState(mockContestants);
   const [selectedContestants, setSelectedContestants] = useState<number[]>([]);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all"); // track active filter tab
+
+  // const [data, setData] = useState<Contestant[] | null>(null);
+  const [contestants, setContestants] = useState<Contestant[]>([]);
+
+  
+  useEffect(() => {
+    client.fetch(formSubmissionQuery).then((results) => {
+      // const formatted = results.map((item: any, index: number) => ({
+      //   id: index + 1,
+      //   name: `${item.firstName} ${item.surname}`,
+      //   title: item.profession ?? "Contestant",
+      //   image: item.imageUrl,
+      // }));
+      const formatted: Contestant[] = results.map(
+        (item: any, index: number) => {
+          const photosCount = [item.image1, item.image2].filter(Boolean).length;
+
+          const status: Contestant["status"] = item.isDisqualified
+            ? "disqualified"
+            : item.screeningStatus === "screened"
+            ? "qualified"
+            : "pending";
+
+          return {
+            id: index + 1,
+
+            surname: item.surname ?? "",
+            firstName: item.firstName ?? "",
+
+            email: item.email ?? "",
+            phone: item.phoneNumbers ?? "",
+
+            country: item.countryOfResidence ?? "",
+            profession: item.profession ?? "Contestant",
+
+            status,
+            screeningStatus: item.screeningStatus ?? "pending",
+
+            appliedDate: item.submittedAt ?? "",
+            photos: photosCount,
+          };
+        }
+      );
+
+
+      setContestants(formatted);
+    });
+  }, []);
+  // const contestantList: Contestant[] = data || [];
 
   const updateContestantStatus = (
     id: number,
@@ -126,6 +222,16 @@ export function AdminPageComponent({ userEmail }: { userEmail: string }) {
       setSelectedContestants(filteredIds);
     }
   };
+
+
+  console.log({ contestants });
+
+  if (!contestants)
+    return (
+      <div className="flex justify-center items-center h-screen text-black">
+        <Loading />
+      </div>
+    );
 
   const pendingCount = contestants.filter((c) => c.status === "pending").length;
   const qualifiedCount = contestants.filter(
