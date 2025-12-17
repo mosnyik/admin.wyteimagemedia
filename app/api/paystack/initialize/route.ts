@@ -1,3 +1,32 @@
+const allowedOrigins = [
+  "https://app.example.com",
+  "https://admin.example.com",
+  "http://localhost:5173/",
+];
+
+function getCorsHeaders(req: Request): HeadersInit | undefined {
+  // get the originating url
+  const origin = req.headers.get("origin");
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+  }
+  // meaning we do not have an allowed url
+  return undefined;
+}
+
+export async function OPTIONS(req: Request) {
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders(req),
+  });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
