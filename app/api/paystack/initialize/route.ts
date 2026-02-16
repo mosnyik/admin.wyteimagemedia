@@ -1,7 +1,7 @@
 const allowedOrigins = [
-  "https://app.example.com",
-  "https://admin.example.com",
-  "http://localhost:5173/",
+  "https://www.wyteimagemedia.com",
+  "https://wyteimagemedia.com",
+  "http://localhost:5173",
 ];
 
 function getCorsHeaders(req: Request): HeadersInit | undefined {
@@ -28,6 +28,8 @@ export async function OPTIONS(req: Request) {
 }
 
 export async function POST(request: Request) {
+  const corsHeaders = getCorsHeaders(request);
+
   try {
     const body = await request.json();
 
@@ -46,12 +48,13 @@ export async function POST(request: Request) {
     const data = await response.json();
     return Response.json(data, {
       status: response.ok ? 200 : response.status,
+      headers: corsHeaders,
     });
   } catch (err) {
     console.log(`An error occured: ${err}`);
     return Response.json(
       { data: null, error: "Failed to initialize transaction" },
-      { status: 200 }
+      { status: 200, headers: corsHeaders }
     );
   }
 }
