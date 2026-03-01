@@ -10,6 +10,7 @@ import { client } from "@/sanity/lib/client";
 import { formSubmissionQuery } from "@/lib/queries";
 import Loading from "@/components/shared/Loading";
 type Contestant = {
+  _id: string;
   id: number;
   surname: string;
   firstName: string;
@@ -151,6 +152,7 @@ export function AdminPageComponent({ userEmail }: { userEmail: string }) {
             : "pending";
 
           return {
+            _id: item._id,
             id: index + 1,
 
             surname: item.surname ?? "",
@@ -177,22 +179,52 @@ export function AdminPageComponent({ userEmail }: { userEmail: string }) {
   }, []);
   // const contestantList: Contestant[] = data || [];
 
-  const updateContestantStatus = (
+  const updateContestantStatus = async (
     id: number,
     status: "pending" | "qualified" | "disqualified",
     screeningStatus?: "pending" | "screened" | "rejected"
   ) => {
-    setContestants(
-      contestants.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              status,
-              screeningStatus: screeningStatus || c.screeningStatus,
-            }
-          : c
-      )
-    );
+    const contestant = contestants.find((c) => c.id === id);
+    if (!contestant) return;
+
+    // Determine Sanity field values based on status
+    const isDisqualified = status === "disqualified";
+    const sanityScreeningStatus =
+      screeningStatus ||
+      (status === "qualified" ? "screened" : status === "disqualified" ? "rejected" : "pending");
+
+    try {
+      const response = await fetch("/api/contestants/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          _id: contestant._id,
+          screeningStatus: sanityScreeningStatus,
+          isDisqualified,
+          screenedBy: userEmail,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update contestant");
+      }
+
+      // Update local state after successful API call
+      setContestants(
+        contestants.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                status,
+                screeningStatus: sanityScreeningStatus,
+              }
+            : c
+        )
+      );
+    } catch (error) {
+      console.error("Error updating contestant:", error);
+      // Optionally show a toast/notification to the user
+    }
   };
 
   const toggleContestantSelection = (id: number) => {

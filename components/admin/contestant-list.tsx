@@ -13,6 +13,7 @@ import ContestantActions from "./contestant-actions";
 import { Mail, Check, X } from "lucide-react";
 
 interface Contestant {
+  _id: string;
   id: number;
   surname: string;
   firstName: string;

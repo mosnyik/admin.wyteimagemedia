@@ -274,6 +274,7 @@ export const homeQuery = `*[_type == "home"][0]{
 export const formSubmissionQuery = `*[
   _type == "formSubmission"
 ]{
+  _id,
   ...,
   "imageUrl": image1.asset->url
 }`;
