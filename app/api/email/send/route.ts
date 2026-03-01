@@ -11,7 +11,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email service not configured" }, { status: 500 })
     }
 
-    const { recipients, subject, message } = await request.json()
+    const { recipients, subject, message, replyTo } = await request.json()
+
+    // Use provided replyTo or fall back to env default
+    const defaultReplyTo = process.env.RESEND_REPLY_TO_EMAILS || process.env.NEXT_PUBLIC_DEFAULT_REPLY_TO
+    const replyToEmails = replyTo || (defaultReplyTo ? defaultReplyTo.split(",").map((e: string) => e.trim()) : [])
 
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json({ error: "Recipients are required" }, { status: 400 })
@@ -30,6 +34,7 @@ export async function POST(request: NextRequest) {
           from: process.env.RESEND_FROM_EMAIL || "Wyte Image Media <onboarding@resend.dev>",
           to: recipient.email,
           subject: subject,
+          replyTo: replyToEmails.length > 0 ? replyToEmails : undefined,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <p>Dear ${recipient.firstName},</p>

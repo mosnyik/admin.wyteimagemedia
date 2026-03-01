@@ -39,6 +39,7 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
   const [activeTab, setActiveTab] = useState("write")
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
+  const [replyTo, setReplyTo] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [templateName, setTemplateName] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState<string>("")
@@ -86,6 +87,7 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
           recipients: validRecipients.map((c) => ({ email: c.email, firstName: c.firstName })),
           subject,
           message,
+          replyTo: replyTo.trim() ? replyTo.split(",").map((e) => e.trim()).filter(Boolean) : undefined,
         }),
       })
 
@@ -194,6 +196,24 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
                   onChange={(e) => setSubject(e.target.value)}
                   className="mt-2 border-border"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="replyTo" className="text-foreground font-medium">
+                  Reply-To
+                </Label>
+                <Input
+                  id="replyTo"
+                  placeholder={process.env.NEXT_PUBLIC_DEFAULT_REPLY_TO || "email@example.com, another@example.com"}
+                  value={replyTo}
+                  onChange={(e) => setReplyTo(e.target.value)}
+                  className="mt-2 border-border"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Comma-separated emails. {process.env.NEXT_PUBLIC_DEFAULT_REPLY_TO
+                    ? `Default: ${process.env.NEXT_PUBLIC_DEFAULT_REPLY_TO}`
+                    : "Leave empty to use default."}
+                </p>
               </div>
 
               <div>
