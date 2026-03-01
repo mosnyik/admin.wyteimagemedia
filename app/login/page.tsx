@@ -4,7 +4,6 @@ import type React from "react";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -178,16 +177,6 @@ export default function LoginPage() {
             Sign in with Google
           </button>
 
-          {/* Sign Up Link */}
-          <p className="text-center text-slate-600 text-sm mt-6">
-            Don't have an account?{" "}
-            <Link
-              href="/signup"
-              className="text-[#45B7A8] hover:text-[#2D9B88] font-semibold"
-            >
-              Sign up
-            </Link>
-          </p>
         </div>
 
         {/* Demo Credentials */}
