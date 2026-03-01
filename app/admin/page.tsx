@@ -12,5 +12,5 @@ export default async function AdminPage() {
     redirect("/login")
   }
 
-  return <AdminPageComponent userEmail={session.email} />
+  return <AdminPageComponent userEmail={session.email} userName={session.name} />
 }

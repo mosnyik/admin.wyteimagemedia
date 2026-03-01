@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import ContestantList from "@/components/admin/contestant-list";
 import EmailModal from "@/components/admin/email-modal";
 import AdminHeader from "@/components/admin/admin-header";
@@ -124,7 +125,7 @@ type Contestant = {
 //   },
 // ];
 
-export function AdminPageComponent({ userEmail }: { userEmail: string }) {
+export function AdminPageComponent({ userEmail, userName }: { userEmail: string; userName?: string }) {
   const [selectedContestants, setSelectedContestants] = useState<number[]>([]);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all"); // track active filter tab
@@ -201,7 +202,7 @@ export function AdminPageComponent({ userEmail }: { userEmail: string }) {
           _id: contestant._id,
           screeningStatus: sanityScreeningStatus,
           isDisqualified,
-          screenedBy: userEmail,
+          screenedBy: userName || userEmail,
         }),
       });
 
@@ -221,9 +222,10 @@ export function AdminPageComponent({ userEmail }: { userEmail: string }) {
             : c
         )
       );
+      toast.success(`Contestant ${status === "qualified" ? "qualified" : status === "disqualified" ? "disqualified" : "updated"} successfully`);
     } catch (error) {
       console.error("Error updating contestant:", error);
-      // Optionally show a toast/notification to the user
+      toast.error("Failed to update contestant status");
     }
   };
 

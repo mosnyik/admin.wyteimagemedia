@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -60,19 +61,51 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
 
   const handleSend = async () => {
     if (!subject.trim() || !message.trim()) {
-      alert("Please fill in subject and message")
+      toast.error("Please fill in subject and message")
       return
+    }
+
+    // Filter out contestants without valid emails
+    const validRecipients = contestants.filter((c) => c.email && c.email.includes("@"))
+
+    if (validRecipients.length === 0) {
+      toast.error("No contestants with valid email addresses selected")
+      return
+    }
+
+    if (validRecipients.length < contestants.length) {
+      toast.warning(`${contestants.length - validRecipients.length} contestant(s) skipped - no email address`)
     }
 
     setIsSending(true)
     try {
-      // Simulate API call - replace with actual email API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      alert(`Email sent to ${selectedCount} contestant(s)`)
+      const response = await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipients: validRecipients.map((c) => ({ email: c.email, firstName: c.firstName })),
+          subject,
+          message,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to send emails")
+      }
+
+      if (data.failed > 0) {
+        toast.warning(`Sent ${data.sent} email(s), ${data.failed} failed`)
+      } else {
+        toast.success(`Successfully sent ${data.sent} email(s)`)
+      }
       setSubject("")
       setMessage("")
       setTemplateName("")
       onOpenChange(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send emails")
     } finally {
       setIsSending(false)
     }
@@ -80,7 +113,7 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
 
   const handleSaveTemplate = () => {
     if (!templateName.trim() || !subject.trim() || !message.trim()) {
-      alert("Please fill in template name, subject, and message")
+      toast.error("Please fill in template name, subject, and message")
       return
     }
 
@@ -93,7 +126,7 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
 
     setTemplates([...templates, newTemplate])
     setTemplateName("")
-    alert("Template saved successfully!")
+    toast.success("Template saved successfully!")
   }
 
   const handleLoadTemplate = (templateId: string) => {
@@ -107,9 +140,8 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
   }
 
   const handleDeleteTemplate = (templateId: string) => {
-    if (window.confirm("Are you sure you want to delete this template?")) {
-      setTemplates(templates.filter((t) => t.id !== templateId))
-    }
+    setTemplates(templates.filter((t) => t.id !== templateId))
+    toast.success("Template deleted")
   }
 
   return (
