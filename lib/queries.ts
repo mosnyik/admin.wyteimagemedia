@@ -276,6 +276,17 @@ export const formSubmissionQuery = `*[
 ]{
   _id,
   ...,
-  "imageUrl": image1.asset->url
+  "imageUrl": image1.asset->url,
+  "image1Url": image1.asset->url,
+  "image2Url": image2.asset->url
+}`;
+
+export const contestantByIdQuery = `*[
+  _type == "formSubmission" && _id == $id
+][0]{
+  _id,
+  ...,
+  "image1Url": image1.asset->url,
+  "image2Url": image2.asset->url
 }`;
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import { MoreVertical, Check, X, Eye, CheckCircle, XCircle } from "lucide-react"
 
 interface ContestantActionsProps {
   contestant: {
+    _id: string
     id: number
     firstName: string
     surname: string
@@ -33,6 +35,12 @@ export default function ContestantActions({
   expanded,
   onToggleExpanded,
 }: ContestantActionsProps) {
+  const router = useRouter()
+
+  const handleViewProfile = () => {
+    router.push(`/admin/contestants/${contestant._id}`)
+  }
+
   return (
     <DropdownMenu open={expanded} onOpenChange={onToggleExpanded}>
       <DropdownMenuTrigger asChild>
@@ -79,7 +87,7 @@ export default function ContestantActions({
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={handleViewProfile} className="gap-2 cursor-pointer">
           <Eye className="h-4 w-4" />
           <span>View Profile</span>
         </DropdownMenuItem>
