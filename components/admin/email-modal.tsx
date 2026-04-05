@@ -33,9 +33,10 @@ interface EmailModalProps {
     firstName: string
     email: string
   }>
+  onPaywallTriggered: () => void
 }
 
-export default function EmailModal({ open, onOpenChange, selectedCount, contestants }: EmailModalProps) {
+export default function EmailModal({ open, onOpenChange, selectedCount, contestants, onPaywallTriggered }: EmailModalProps) {
   const [activeTab, setActiveTab] = useState("write")
   const [subject, setSubject] = useState("")
   const [message, setMessage] = useState("")
@@ -93,6 +94,12 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
 
       const data = await response.json()
 
+      if (response.status === 402) {
+        onOpenChange(false)
+        onPaywallTriggered()
+        return
+      }
+
       if (!response.ok) {
         throw new Error(data.error || "Failed to send emails")
       }
@@ -102,10 +109,20 @@ export default function EmailModal({ open, onOpenChange, selectedCount, contesta
       } else {
         toast.success(`Successfully sent ${data.sent} email(s)`)
       }
+
       setSubject("")
       setMessage("")
       setTemplateName("")
       onOpenChange(false)
+
+      if (data.paywallRemaining === 0) {
+        onPaywallTriggered()
+      } else if (typeof data.paywallRemaining === "number" && data.paywallRemaining > 0) {
+        toast.warning(
+          `You can only send ${data.paywallRemaining} more email${data.paywallRemaining === 1 ? "" : "s"}. Pay up for full access.`,
+          { duration: 6000 }
+        )
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to send emails")
     } finally {

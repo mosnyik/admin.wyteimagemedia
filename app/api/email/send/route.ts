@@ -1,10 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
+import { getSession } from "@/lib/auth"
+import { checkAndIncrement } from "@/lib/paywall"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const paywall = await checkAndIncrement(session.email, "email")
+    if (!paywall.allowed) {
+      return NextResponse.json(
+        { error: "paywall", message: "You have reached your free email limit. Upgrade to continue." },
+        { status: 402 }
+      )
+    }
+
     // Check if API key is configured
     if (!process.env.RESEND_API_KEY) {
       console.error("RESEND_API_KEY is not configured")
@@ -60,11 +75,14 @@ export async function POST(request: NextRequest) {
       console.error("Failed emails:", failed.map((f) => (f as PromiseRejectedResult).reason))
     }
 
+    const paywallRemaining = Math.max(0, paywall.limit - paywall.count)
+
     return NextResponse.json({
       success: true,
       sent: successful,
       failed: failed.length,
       total: recipients.length,
+      paywallRemaining,
     })
   } catch (error) {
     console.error("Email send error:", error)

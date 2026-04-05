@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import PaywallModal from "@/components/admin/paywall-modal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -74,6 +75,7 @@ interface ContestantProfileProps {
 export default function ContestantProfile({ contestant, userEmail, userName }: ContestantProfileProps) {
   const router = useRouter()
   const [isUpdating, setIsUpdating] = useState(false)
+  const [paywallOpen, setPaywallOpen] = useState(false)
 
   const getStatusBadge = () => {
     if (contestant.isDisqualified) {
@@ -93,6 +95,25 @@ export default function ContestantProfile({ contestant, userEmail, userName }: C
     status: "pending" | "qualified" | "disqualified",
     screeningStatus: "pending" | "screened" | "rejected"
   ) => {
+    // Reset to pending is not a paywalled action
+    const isReset = status === "pending" && screeningStatus === "pending"
+
+    if (!isReset) {
+      try {
+        const paywallRes = await fetch("/api/paywall/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "qualification" }),
+        })
+        if (paywallRes.status === 402) {
+          setPaywallOpen(true)
+          return
+        }
+      } catch {
+        // allow on network error
+      }
+    }
+
     setIsUpdating(true)
     try {
       const response = await fetch("/api/contestants/update", {
@@ -151,6 +172,7 @@ export default function ContestantProfile({ contestant, userEmail, userName }: C
 
   return (
     <div className="min-h-screen bg-background">
+      <PaywallModal open={paywallOpen} onOpenChange={setPaywallOpen} />
       {/* Header */}
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">

@@ -38,6 +38,7 @@ interface ContestantListProps {
     screeningStatus?: "pending" | "screened" | "rejected"
   ) => void;
   onOpenEmailModal: () => void;
+  onViewProfile: (contestantId: string) => void;
 }
 
 export default function ContestantList({
@@ -47,6 +48,7 @@ export default function ContestantList({
   onSelectAll,
   onUpdateStatus,
   onOpenEmailModal,
+  onViewProfile,
 }: ContestantListProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
@@ -249,6 +251,7 @@ export default function ContestantList({
                     <ContestantActions
                       contestant={contestant}
                       onUpdateStatus={onUpdateStatus}
+                      onViewProfile={onViewProfile}
                       expanded={expandedId === contestant.id}
                       onToggleExpanded={() =>
                         setExpandedId(

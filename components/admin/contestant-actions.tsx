@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +24,7 @@ interface ContestantActionsProps {
     status: "pending" | "qualified" | "disqualified",
     screeningStatus?: "pending" | "screened" | "rejected",
   ) => void
+  onViewProfile: (contestantId: string) => void
   expanded: boolean
   onToggleExpanded: () => void
 }
@@ -32,13 +32,12 @@ interface ContestantActionsProps {
 export default function ContestantActions({
   contestant,
   onUpdateStatus,
+  onViewProfile,
   expanded,
   onToggleExpanded,
 }: ContestantActionsProps) {
-  const router = useRouter()
-
   const handleViewProfile = () => {
-    router.push(`/admin/contestants/${contestant._id}`)
+    onViewProfile(contestant._id)
   }
 
   return (

@@ -2,9 +2,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ContestantList from "@/components/admin/contestant-list";
 import EmailModal from "@/components/admin/email-modal";
+import PaywallModal from "@/components/admin/paywall-modal";
 import AdminHeader from "@/components/admin/admin-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/sanity/lib/client";
@@ -126,8 +128,11 @@ type Contestant = {
 // ];
 
 export function AdminPageComponent({ userEmail, userName }: { userEmail: string; userName?: string }) {
+  const router = useRouter();
   const [selectedContestants, setSelectedContestants] = useState<number[]>([]);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallAction, setPaywallAction] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("all"); // track active filter tab
 
   // const [data, setData] = useState<Contestant[] | null>(null);
@@ -180,6 +185,35 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
   }, []);
   // const contestantList: Contestant[] = data || [];
 
+  const triggerPaywall = (action: string) => {
+    setPaywallAction(action);
+    setPaywallOpen(true);
+  };
+
+  const checkPaywall = async (action: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/paywall/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (res.status === 402) {
+        triggerPaywall(action);
+        return false;
+      }
+      return res.ok;
+    } catch {
+      return true; // allow on network error
+    }
+  };
+
+  const handleViewProfile = async (contestantId: string) => {
+    const allowed = await checkPaywall("view_profile");
+    if (allowed) {
+      router.push(`/admin/contestants/${contestantId}`);
+    }
+  };
+
   const updateContestantStatus = async (
     id: number,
     status: "pending" | "qualified" | "disqualified",
@@ -187,6 +221,20 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
   ) => {
     const contestant = contestants.find((c) => c.id === id);
     if (!contestant) return;
+
+    // Determine action type for paywall
+    // reset action (pending+pending) is never paywalled
+    let actionType: string | null = null;
+    if (screeningStatus === undefined) {
+      actionType = "qualification"; // qualify / disqualify (no explicit screeningStatus)
+    } else if (screeningStatus !== "pending") {
+      actionType = "screening"; // mark as screened / mark as rejected
+    }
+
+    if (actionType) {
+      const allowed = await checkPaywall(actionType);
+      if (!allowed) return;
+    }
 
     // Determine Sanity field values based on status
     const isDisqualified = status === "disqualified";
@@ -344,6 +392,7 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
               onSelectAll={() => selectAll(null)}
               onUpdateStatus={updateContestantStatus}
               onOpenEmailModal={() => setEmailModalOpen(true)}
+              onViewProfile={handleViewProfile}
             />
           </TabsContent>
 
@@ -355,6 +404,7 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
               onSelectAll={() => selectAll("pending")}
               onUpdateStatus={updateContestantStatus}
               onOpenEmailModal={() => setEmailModalOpen(true)}
+              onViewProfile={handleViewProfile}
             />
           </TabsContent>
 
@@ -366,6 +416,7 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
               onSelectAll={() => selectAll("qualified")}
               onUpdateStatus={updateContestantStatus}
               onOpenEmailModal={() => setEmailModalOpen(true)}
+              onViewProfile={handleViewProfile}
             />
           </TabsContent>
 
@@ -379,6 +430,7 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
               onSelectAll={() => selectAll("disqualified")}
               onUpdateStatus={updateContestantStatus}
               onOpenEmailModal={() => setEmailModalOpen(true)}
+              onViewProfile={handleViewProfile}
             />
           </TabsContent>
         </Tabs>
@@ -392,6 +444,13 @@ export function AdminPageComponent({ userEmail, userName }: { userEmail: string;
         contestants={contestants.filter((c) =>
           selectedContestants.includes(c.id)
         )}
+        onPaywallTriggered={() => triggerPaywall("email")}
+      />
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
       />
     </div>
   );
